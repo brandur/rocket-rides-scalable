@@ -45,6 +45,11 @@ print_status("Initializing data directory for primary")
 #
 
 print_status("Configuring primary")
+
+# Configures authentication around replication. We allow permission for our
+# user to access replication for both `local` (for use with `pg_basebackup`)
+# and then also on IPv4/IPv6 so that we can later connect to the database over
+# its other network interfaces.
 File.open("#{DATA_DIR}/primary/pg_hba.conf", mode="a") do |f|
   f << <<~eos
     local   replication     #{USER}                                trust
@@ -78,8 +83,6 @@ sleep(1)
 
 NUM_REPLICAS.times do |i|
   print_status("Initializing data directory for replica #{i}")
-
-  #`initdb -D #{DATA_DIR}/replica#{i}/`
 
   # `--xlog-method` to become `--wal-method` in PG 10. Update accordingly.
   `pg_basebackup -p #{POSTGRES_PORT} --xlog-method=stream -D #{DATA_DIR}/replica#{i}/`
