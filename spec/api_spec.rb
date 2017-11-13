@@ -16,34 +16,37 @@ RSpec.describe API do
     API
   end
 
-  before do
-    clear_database
-
-    @user = User.create(
-      email: USER_EMAIL
+  let(:user) do
+    User.create(
+      email: USER_EMAIL,
     )
   end
 
+  before do
+    clear_database
+    user # these accessors are lazy, so ensure user exists
+  end
+
   describe "POST /rides" do
-    it "succeeds and creates a ride and log record" do
+    it "succeeds and creates a ride" do
       post "/rides", VALID_PARAMS, headers
       expect(last_response.status).to eq(201)
-      expect(unwrap_ok(last_response.body)).to eq(
-        Messages.ok
+      expect(unwrap_field(last_response.body, :distance)).to eq(
+        VALID_PARAMS["distance"].round(1)
       )
 
       expect(Ride.count).to eq(1)
     end
 
     describe "failure" do
-      it "denis requests without authorization" do
+      it "denies requests without authorization" do
         post "/rides", VALID_PARAMS, {}
         expect(last_response.status).to eq(401)
         expect(unwrap_error(last_response.body)).to \
           eq(Messages.error_auth_required)
       end
 
-      it "denis requests with invalid authorization" do
+      it "denies requests with invalid authorization" do
         post "/rides", VALID_PARAMS, {
           "HTTP_AUTHORIZATION" => "user-does-not-exist@example.com"
         }
@@ -68,6 +71,48 @@ RSpec.describe API do
     end
   end
 
+  describe "GET /rides/:id" do
+    let(:ride) do
+      Ride.create(
+        distance: 123.0,
+        user_id: user.id,
+      )
+    end
+
+    it "succeeds and retrieves a ride" do
+      get "/rides/#{ride.id}", {}, headers
+      expect(last_response.status).to eq(200)
+      expect(unwrap_field(last_response.body, :distance)).to eq(
+        ride.distance.round(1),
+      )
+    end
+
+    describe "failure" do
+      it "denies requests without authorization" do
+        get "/rides/#{ride.id}", {}, {}
+        expect(last_response.status).to eq(401)
+        expect(unwrap_error(last_response.body)).to \
+          eq(Messages.error_auth_required)
+      end
+
+      it "denies requests with invalid authorization" do
+        get "/rides/#{ride.id}", {}, {
+          "HTTP_AUTHORIZATION" => "user-does-not-exist@example.com"
+        }
+        expect(last_response.status).to eq(401)
+        expect(unwrap_error(last_response.body)).to \
+          eq(Messages.error_auth_invalid)
+      end
+
+      it "404s requests that ask for IDs that don't exist" do
+        get "/rides/0", {}, headers
+        expect(last_response.status).to eq(404)
+        expect(unwrap_error(last_response.body)).to \
+          eq(Messages.error_not_found(object: "ride", id: "0"))
+      end
+    end
+  end
+
   #
   # helpers
   #
@@ -79,14 +124,12 @@ RSpec.describe API do
   end
 
   private def unwrap_error(body)
-    data = JSON.parse(body, symbolize_names: true)
-    expect(data).to have_key(:error)
-    data[:error]
+    unwrap_field(body, :error)
   end
 
-  private def unwrap_ok(body)
+  private def unwrap_field(body, field)
     data = JSON.parse(body, symbolize_names: true)
-    expect(data).to have_key(:message)
-    data[:message]
+    expect(data).to have_key(field)
+    data[field]
   end
 end

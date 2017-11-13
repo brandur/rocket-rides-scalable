@@ -7,10 +7,6 @@ class API < Sinatra::Base
   set :server, %w[puma]
   set :show_exceptions, false
 
-  get "/rides" do
-    user = authenticate_user(request)
-  end
-
   post "/rides" do
     user = authenticate_user(request)
     params = validate_params(request)
@@ -21,10 +17,21 @@ class API < Sinatra::Base
         user_id: user.id,
       )
 
-      [201, JSON.generate(wrap_ok(
-        Messages.ok
-      ))]
+      [201, JSON.generate(serialize_ride(ride))]
     end
+  end
+
+  get "/rides/:id" do |id|
+    user = authenticate_user(request)
+
+    ride = Ride.first(id: id)
+    if ride.nil?
+      halt 404, JSON.generate(wrap_error(
+        Messages.error_not_found(object: "ride", id: id)
+      ))
+    end
+
+    [200, JSON.generate(serialize_ride(ride))]
   end
 end
 
@@ -53,6 +60,10 @@ module Messages
 
   def self.error_auth_required
     "Please specify credentials in the Authorization header."
+  end
+
+  def self.error_not_found(object:, id:)
+    "Object of type '#{object}' with ID '#{id}' was not found."
   end
 
   def self.error_require_float(key:)
@@ -85,6 +96,14 @@ def authenticate_user(request)
   user
 end
 
+def serialize_ride(ride)
+  {
+    "distance": ride.distance.round(1),
+    "id":       ride.id,
+    "user_id":  ride.user_id,
+  }
+end
+
 def validate_params(request)
   {
     "distance" => validate_params_float(request, "distance"),
@@ -112,10 +131,4 @@ end
 # responses from the API. Still needs to be JSON-encoded before transmission.
 def wrap_error(message)
   { error: message }
-end
-
-# Wraps a message in the standard structure that we send back for success
-# responses from the API. Still needs to be JSON-encoded before transmission.
-def wrap_ok(message)
-  { message: message }
 end
