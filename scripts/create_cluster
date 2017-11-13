@@ -77,18 +77,29 @@ primary_pid = Process.spawn("postgres -D #{DATA_DIR}/primary/")
 print_status("Waiting a short moment for it to come up")
 sleep(1)
 
-#
-# initialize data directories for replicas
-#
+# Now bring up the replicas. Note that we do all the work (backup, configure,
+# start) for each replica all at once because if the initial base backup and
+# startup are too far apart there's a possibility of a race condition as a
+# replica comes up, but the WAL segment it's trying to start from has already
+# been removed by the primary.
+
+replica_pids = []
 
 NUM_REPLICAS.times do |i|
+
+  #
+  # create base backup for replica
+  #
+
   print_status("Initializing data directory for replica #{i}")
 
   # `--xlog-method` to become `--wal-method` in PG 10. Update accordingly.
   `pg_basebackup -p #{POSTGRES_PORT} --xlog-method=stream -D #{DATA_DIR}/replica#{i}/`
-end
 
-NUM_REPLICAS.times do |i|
+  #
+  # configure replica
+  #
+
   print_status("Configuring replica #{i}")
 
   File.open("#{DATA_DIR}/replica#{i}/postgresql.conf", mode="a") do |f|
@@ -106,14 +117,11 @@ NUM_REPLICAS.times do |i|
       primary_conninfo='host=127.0.0.1 port=#{POSTGRES_PORT} user=#{USER}'
     eos
   end
-end
 
-#
-# start replicas
-#
+  #
+  # start replica
+  #
 
-replica_pids = []
-NUM_REPLICAS.times do |i|
   print_status("Starting replica #{i}")
   replica_pids << Process.spawn("postgres -D #{DATA_DIR}/replica#{i}/")
 end
