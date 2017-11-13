@@ -18,8 +18,8 @@ processes:
 
 ```
 bundle install
-createdb rocket-rides-reads
-psql rocket-rides-reads < schema.sql
+createdb -p 5433 rocket-rides-reads
+psql -p 5433 rocket-rides-reads < schema.sql
 forego start
 ```
 
@@ -30,9 +30,9 @@ suite:
 
 ```
 bundle install
-createdb rocket-rides-reads-test
-psql rocket-rides-reads-test < schema.sql
-bundle exec rspec spec/
+createdb -p 5433 rocket-rides-reads-test
+psql -p 5433 rocket-rides-reads-test < schema.sql
+POSTGRES_PORT=5433 bundle exec rspec spec/
 ```
 
 [reads]: https://brandur.org/postgres-reads
