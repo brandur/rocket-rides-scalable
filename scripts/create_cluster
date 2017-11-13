@@ -115,19 +115,4 @@ NUM_REPLICAS.times do |i|
   replica_pids << Process.spawn("postgres -D #{DATA_DIR}/replica#{i}/")
 end
 
-=begin
-shutdown = -> do
-  print_status("Killing primary")
-  Process.kill("TERM", primary_pid)
-
-  NUM_REPLICAS.times do |i|
-    print_status("Killing replica #{i}")
-    Process.kill("TERM", replica_pids[i])
-  end
-end
-Kernel.trap("SIGINT", &shutdown)
-Kernel.trap("SIGTERM", &shutdown)
-Kernel.trap("SIGQUIT", &shutdown)
-=end
-
 Process.wait primary_pid
