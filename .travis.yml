@@ -1,0 +1,12 @@
+addons:
+  postgresql: "9.6"
+before_script:
+  - createdb rocket-rides-reads-test
+  - psql rocket-rides-reads-test < schema.sql
+language: ruby
+notifications:
+  email:
+    on_success: never
+rvm:
+  - 2.4.0
+sudo: false
