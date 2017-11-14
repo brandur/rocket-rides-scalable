@@ -25,8 +25,6 @@ class API < Sinatra::Base
   get "/rides/:id" do |id|
     user = authenticate_user(request)
 
-    p DB.servers
-
     ride = Ride.server(select_replica(user)).first(id: id)
     if ride.nil?
       halt 404, JSON.generate(wrap_error(
