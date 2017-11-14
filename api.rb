@@ -108,17 +108,25 @@ def select_read_server(user)
   # exclude :default at the zero index
   replica_names = DB.servers[1..-1]
 
-  replica_last_lsns = replica_names.map do |name|
+  candidate_names = replica_names.select do |name|
     DB.with_server(name) do
-      # Note in PG 10 these changes come into effect and this code will need an update:
+      # Note in PG 10 these changes come into effect and this code will need an
+      # update:
       #
       #     pg_last_xlog_replay_location -> pg_last_wal_replay_lsn
+      #     pg_xlog_location_diff        -> pg_wal_lsn_diff
       #
-      DB[Sequel.lit("SELECT pg_last_xlog_replay_location() AS lsn;")].first[:lsn]
+      DB[Sequel.lit(<<~eos), user.min_lsn].first[:res]
+        SELECT pg_xlog_location_diff(pg_last_xlog_replay_location(), ?) >= 0 AS res
+      eos
     end
   end
 
-  :default
+  # If no candidates are caught up enough, then go to the primary.
+  return :default if candidate_names.empty?
+
+  # Return a random replica name from amongst the candidates.
+  candidate_names.sample
 end
 
 def serialize_ride(ride)
