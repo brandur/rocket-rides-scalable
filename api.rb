@@ -27,7 +27,7 @@ class API < Sinatra::Base
 
     p DB.servers
 
-    ride = Ride.server(select_read_server(user)).first(id: id)
+    ride = Ride.server(select_replica(user)).first(id: id)
     if ride.nil?
       halt 404, JSON.generate(wrap_error(
         Messages.error_not_found(object: "ride", id: id)
@@ -99,8 +99,17 @@ def authenticate_user(request)
   user
 end
 
-def select_read_server(user)
-  # If the user's `min_sln` is `NULL` then they haven't performed an operation
+# Selects the name of a random replica that can be passed to a Sequel `#server`
+# invocation to run a read a read query against a replica instead of the
+# primary.
+#
+# Uses the given user's `min_lsn` to determine which replicas are caught up
+# enough to be usable such that we will never have a stale read.
+#
+# In cases where no appropriate replica candidates exist, then we return
+# `:default` which maps to the primary.
+def select_replica(user)
+  # If the user's `min_lsn` is `NULL` then they haven't performed an operation
   # yet, and we don't yet know if we can use a replica yet. Default to the
   # primary.
   return :default if user.min_lsn.nil?
