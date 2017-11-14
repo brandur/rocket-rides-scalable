@@ -7,8 +7,23 @@ details.
 
 ## Architecture
 
-Here's a sample trace of the running set of programs (and note that in Sequel
-lingo, `default` is equivalent to "primary"):
+If you look in `Procfile`, you'll see these processes:
+
+* `api`: The main Rocket Rides API. It responds to requests and writes data to
+  Postgres. On read requests, it may delegate the read to a replica instead of
+  the primary.
+* `observer`: A background process that periodically (by default, every 0.5
+  seconds) connects to each replica, checks the last WAL LSN (log sequence
+  number) that it applies, then persists the data set to Postgres.
+* `simulator`: Random issues requests to the `api`. First it creates a new
+  ride, then it consumes the ride by retrieving the same ID that it just
+  created. Depending on replication status, this retrieval may go to a replica
+  or to the primary.
+
+After you run `forego start` you should see the `simulator` issuing jobs
+against `api` right away. The `api` will log whether each retrieval went to the
+primary or a replica. Here's a sample trace (and note that in Sequel lingo,
+`default` is equivalent to "primary"):
 
 ```
 $ forego start | grep 'Reading ride'
@@ -24,9 +39,10 @@ api.1       | Reading ride 104 from server 'default'
 api.1       | Reading ride 105 from server 'replica2'
 ```
 
-`api` won't read from the primary unless it has no choice, but you'll notice
-that occasionally the replicas fall far enough behind (or more likely, the
-observer hasn't run recently enough) and it'll fall back to `default`.
+`api` won't read from the primary unless it has no choice, but even so, you'll
+see that occasionally the replicas fall far enough behind that there are no
+appropriate candidates (or more likely, the observer hasn't run recently
+enough) and a query will be routed to the primary (`default`).
 
 ## Setup
 
