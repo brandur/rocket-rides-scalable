@@ -132,6 +132,27 @@ RSpec.describe API do
     end
   end
 
+  describe "#select_replica" do
+    it "returns primary if a user's min_lsn is nil" do
+      expect(select_replica(user)).to eq(:default)
+    end
+
+    it "returns a candidate otherwise" do
+      update_user_min_lsn(user)
+      user.reload
+
+      expect(select_replica(user)).not_to eq(:default)
+    end
+  end
+
+  describe "#update_user_min_lsn" do
+    it "updates a user's minimum lsn (log sequence number)" do
+      update_user_min_lsn(user)
+      user.reload
+      expect(user.min_lsn).not_to be_nil
+    end
+  end
+
   #
   # helpers
   #
