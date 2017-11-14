@@ -7,7 +7,7 @@ require_relative "../api"
 
 def clear_database
   DB.transaction do
-    DB.run("TRUNCATE replica_lsns CASCADE")
+    DB.run("TRUNCATE replica_statuses CASCADE")
     DB.run("TRUNCATE rides CASCADE")
     DB.run("TRUNCATE users CASCADE")
   end

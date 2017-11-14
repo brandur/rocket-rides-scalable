@@ -4,7 +4,7 @@ BEGIN;
 -- A relation that contains the last observed lsn (log sequence number) for
 -- every known replica.
 --
-CREATE TABLE replica_lsns (
+CREATE TABLE replica_statuses (
     id       BIGSERIAL    PRIMARY KEY,
     last_lsn PG_LSN       NOT NULL,
     name     VARCHAR(100) NOT NULL UNIQUE

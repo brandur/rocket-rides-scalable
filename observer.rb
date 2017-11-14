@@ -30,7 +30,7 @@ class Observer
       insert_tuples << { name: name.to_s, last_lsn: last_lsns[i] }
     end
 
-    DB[:replica_lsns].
+    DB[:replica_statuses].
       insert_conflict(target: :name, update: { last_lsn: Sequel[:excluded][:last_lsn] }).
       multi_insert(insert_tuples)
 

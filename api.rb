@@ -122,7 +122,7 @@ def select_replica(user)
   #
   res = DB[Sequel.lit(<<~eos), replica_names, user.min_lsn]
     SELECT name
-    FROM replica_lsns
+    FROM replica_statuses
     WHERE name IN ?
       AND pg_xlog_location_diff(last_lsn, ?) >= 0;
   eos

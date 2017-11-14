@@ -134,12 +134,12 @@ RSpec.describe API do
 
   describe "#select_replica" do
     it "returns primary if a user's min_lsn is nil" do
-      DB[:replica_lsns].insert(name: "replica1", last_lsn: FAR_FUTURE_LSN)
+      DB[:replica_statuses].insert(name: "replica1", last_lsn: FAR_FUTURE_LSN)
 
       expect(select_replica(user)).to eq(:default)
     end
 
-    it "returns primary if the replica_lsns has no entries" do
+    it "returns primary if the replica_statuses has no entries" do
       update_user_min_lsn(user)
       user.reload
 
@@ -147,7 +147,7 @@ RSpec.describe API do
     end
 
     it "returns a candidate otherwise" do
-      DB[:replica_lsns].insert(name: "replica1", last_lsn: FAR_FUTURE_LSN)
+      DB[:replica_statuses].insert(name: "replica1", last_lsn: FAR_FUTURE_LSN)
       update_user_min_lsn(user)
       user.reload
 
