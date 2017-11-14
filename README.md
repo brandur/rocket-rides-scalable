@@ -46,7 +46,7 @@ suite:
 ```
 createdb -p 5433 rocket-rides-reads-test
 psql -p 5433 rocket-rides-reads-test < schema.sql
-POSTGRES_PORT=5433 bundle exec rspec spec/
+forego run bundle exec rspec spec/
 ```
 
 [reads]: https://brandur.org/postgres-reads
