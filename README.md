@@ -5,6 +5,29 @@ demonstrate what it might look like to implement reads from a replica that are
 guaranteed to never be stale. See [the associated article][reads] for full
 details.
 
+## Architecture
+
+Here's a sample trace of the running set of programs (and note that in Sequel
+lingo, `default` is equivalent to "primary"):
+
+```
+$ forego start | grep 'Reading ride'
+api.1       | Reading ride 96 from server 'replica0'
+api.1       | Reading ride 97 from server 'replica0'
+api.1       | Reading ride 98 from server 'replica0'
+api.1       | Reading ride 99 from server 'replica1'
+api.1       | Reading ride 100 from server 'replica4'
+api.1       | Reading ride 101 from server 'replica2'
+api.1       | Reading ride 102 from server 'replica0'
+api.1       | Reading ride 103 from server 'default'
+api.1       | Reading ride 104 from server 'default'
+api.1       | Reading ride 105 from server 'replica2'
+```
+
+`api` won't read from the primary unless it has no choice, but you'll notice
+that occasionally the replicas fall far enough behind (or more likely, the
+observer hasn't run recently enough) and it'll fall back to `default`.
+
 ## Setup
 
 Requirements:
