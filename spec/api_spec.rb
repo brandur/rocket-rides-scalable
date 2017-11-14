@@ -92,6 +92,20 @@ RSpec.describe API do
       )
     end
 
+    it "reads from a replica given a user min_sln" do
+      # Note that while we do set a `min_sln` for the user, we're not actually
+      # confirming that the API is reading off the replica in this test (it
+      # probably is, but it's not actually checked). We should try to do a
+      # little better.
+      update_user_min_lsn(user)
+
+      get "/rides/#{ride.id}", {}, headers
+      expect(last_response.status).to eq(200)
+      expect(unwrap_field(last_response.body, :distance)).to eq(
+        ride.distance.round(1),
+      )
+    end
+
     describe "failure" do
       it "denies requests without authorization" do
         get "/rides/#{ride.id}", {}, {}

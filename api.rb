@@ -105,6 +105,19 @@ def select_read_server(user)
   # primary.
   return :default if user.min_lsn.nil?
 
+  # exclude :default at the zero index
+  replica_names = DB.servers[1..-1]
+
+  replica_last_lsns = replica_names.map do |name|
+    DB.with_server(name) do
+      # Note in PG 10 these changes come into effect and this code will need an update:
+      #
+      #     pg_last_xlog_replay_location -> pg_last_wal_replay_lsn
+      #
+      DB[Sequel.lit("SELECT pg_last_xlog_replay_location() AS lsn;")].first[:lsn]
+    end
+  end
+
   :default
 end
 
@@ -121,7 +134,9 @@ end
 # that this is an update operation and always executes against the primary.
 def update_user_min_lsn(user)
   # Note that this becomes `pg_current_wal_lsn()` in PG 10. Needs update.
-  User.where(id: user.id).update(Sequel.lit("min_lsn = pg_current_xlog_location()"))
+  User.
+    where(id: user.id).
+    update(Sequel.lit("min_lsn = pg_current_xlog_location()"))
 end
 
 def validate_params(request)

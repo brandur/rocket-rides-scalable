@@ -11,6 +11,10 @@ DB = Sequel.connect("postgres://localhost:#{POSTGRES_PORT}/rocket-rides-reads",
   }]
 )
 
+# Currently only required for getting replica last LSNs, and there's probably a
+# better way to do that.
+DB.extension :server_block
+
 # a verbose mode to help with debugging
 if ENV["VERBOSE"] == "true"
   DB.loggers << Logger.new($stdout)
