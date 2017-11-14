@@ -36,6 +36,11 @@ RSpec.describe API do
       )
 
       expect(Ride.count).to eq(1)
+
+      # A `min_lsn` should have been set on the user after the ride was
+      # created.
+      user.reload
+      expect(user.min_lsn).not_to be_nil
     end
 
     describe "failure" do

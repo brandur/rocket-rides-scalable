@@ -1,10 +1,6 @@
 require "rspec"
 require 'webmock/rspec'
 
-# port on which the primary is running
-POSTGRES_PORT = ENV["POSTGRES_PORT"] || abort("need POSTGRES_PORT")
-
-ENV["DATABASE_URL"] = "postgres://localhost:#{POSTGRES_PORT}/rocket-rides-reads-test"
 ENV["RACK_ENV"] = "test"
 
 require_relative "../api"

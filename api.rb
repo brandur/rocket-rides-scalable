@@ -16,6 +16,7 @@ class API < Sinatra::Base
         distance: params["distance"],
         user_id: user.id,
       )
+      update_user_min_lsn(user)
 
       [201, JSON.generate(serialize_ride(ride))]
     end
@@ -24,7 +25,9 @@ class API < Sinatra::Base
   get "/rides/:id" do |id|
     user = authenticate_user(request)
 
-    ride = Ride.first(id: id)
+    p DB.servers
+
+    ride = Ride.server(select_read_server(user)).first(id: id)
     if ride.nil?
       halt 404, JSON.generate(wrap_error(
         Messages.error_not_found(object: "ride", id: id)
@@ -96,12 +99,29 @@ def authenticate_user(request)
   user
 end
 
+def select_read_server(user)
+  # If the user's `min_sln` is `NULL` then they haven't performed an operation
+  # yet, and we don't yet know if we can use a replica yet. Default to the
+  # primary.
+  return :default if user.min_lsn.nil?
+
+  :default
+end
+
 def serialize_ride(ride)
   {
     "distance": ride.distance.round(1),
     "id":       ride.id,
     "user_id":  ride.user_id,
   }
+end
+
+# Updates a user's `min_lsn` (log sequence number) so that we can start making
+# determinations as to whether it's safe for them to read from replicas. Note
+# that this is an update operation and always executes against the primary.
+def update_user_min_lsn(user)
+  # Note that this becomes `pg_current_wal_lsn()` in PG 10. Needs update.
+  User.where(id: user.id).update(Sequel.lit("min_lsn = pg_current_xlog_location()"))
 end
 
 def validate_params(request)
