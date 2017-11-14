@@ -24,6 +24,7 @@ RSpec.describe API do
 
   before do
     clear_database
+    suppress_stdout
     user # these accessors are lazy, so ensure user exists
   end
 

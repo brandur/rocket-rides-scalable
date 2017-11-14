@@ -25,7 +25,10 @@ class API < Sinatra::Base
   get "/rides/:id" do |id|
     user = authenticate_user(request)
 
-    ride = Ride.server(select_replica(user)).first(id: id)
+    name = select_replica(user)
+    $stdout.puts "Reading ride #{id} from server '#{name}'"
+
+    ride = Ride.server(name).first(id: id)
     if ride.nil?
       halt 404, JSON.generate(wrap_error(
         Messages.error_not_found(object: "ride", id: id)
