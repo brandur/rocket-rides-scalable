@@ -113,26 +113,25 @@ def select_replica(user)
   return :default if user.min_lsn.nil?
 
   # exclude :default at the zero index
-  replica_names = DB.servers[1..-1]
+  replica_names = DB.servers[1..-1].map { |name| name.to_s }
 
-  candidate_names = replica_names.select do |name|
-    DB.with_server(name) do
-      # Note in PG 10 these changes come into effect and this code will need an
-      # update:
-      #
-      #     pg_last_xlog_replay_location -> pg_last_wal_replay_lsn
-      #     pg_xlog_location_diff        -> pg_wal_lsn_diff
-      #
-      DB[Sequel.lit(<<~eos), user.min_lsn].first[:res]
-        SELECT pg_xlog_location_diff(pg_last_xlog_replay_location(), ?) >= 0 AS res
-      eos
-    end
-  end
+  # Note in PG 10 these changes come into effect and this code will need an
+  # update:
+  #
+  #     pg_xlog_location_diff -> pg_wal_lsn_diff
+  #
+  res = DB[Sequel.lit(<<~eos), replica_names, user.min_lsn]
+    SELECT name
+    FROM replica_lsns
+    WHERE name IN ?
+      AND pg_xlog_location_diff(last_lsn, ?) >= 0;
+  eos
 
   # If no candidates are caught up enough, then go to the primary.
-  return :default if candidate_names.empty?
+  return :default if res.nil? || res.empty?
 
   # Return a random replica name from amongst the candidates.
+  candidate_names = res.map { |res| res[:name].to_sym }
   candidate_names.sample
 end
 

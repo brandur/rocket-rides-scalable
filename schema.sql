@@ -1,6 +1,16 @@
 BEGIN;
 
 --
+-- A relation that contains the last observed lsn (log sequence number) for
+-- every known replica.
+--
+CREATE TABLE replica_lsns (
+    id       BIGSERIAL    PRIMARY KEY,
+    last_lsn PG_LSN       NOT NULL,
+    name     VARCHAR(100) NOT NULL UNIQUE
+);
+
+--
 -- A relation to hold records for every user of our app.
 --
 CREATE TABLE users (
@@ -9,7 +19,7 @@ CREATE TABLE users (
 
     -- stores the minimum lsn (log sequence number) required to have replicated
     -- to a replica before read requests for the user can be fulfilled on it
-    min_lsn VARCHAR(100)
+    min_lsn PG_LSN
 );
 
 CREATE INDEX users_email
