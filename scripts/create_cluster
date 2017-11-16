@@ -92,9 +92,7 @@ NUM_REPLICAS.times do |i|
   #
 
   print_status("Initializing data directory for replica #{i}")
-
-  # `--xlog-method` to become `--wal-method` in PG 10. Update accordingly.
-  `pg_basebackup -p #{POSTGRES_PORT} --xlog-method=stream -D #{DATA_DIR}/replica#{i}/`
+  `pg_basebackup -p #{POSTGRES_PORT} --wal-method=stream -D #{DATA_DIR}/replica#{i}/`
 
   #
   # configure replica

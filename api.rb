@@ -118,16 +118,11 @@ def select_replica(user)
   # exclude :default at the zero index
   replica_names = DB.servers[1..-1].map { |name| name.to_s }
 
-  # Note in PG 10 these changes come into effect and this code will need an
-  # update:
-  #
-  #     pg_xlog_location_diff -> pg_wal_lsn_diff
-  #
   res = DB[Sequel.lit(<<~eos), replica_names, user.min_lsn]
     SELECT name
     FROM replica_statuses
     WHERE name IN ?
-      AND pg_xlog_location_diff(last_lsn, ?) >= 0;
+      AND pg_wal_lsn_diff(last_lsn, ?) >= 0;
   eos
 
   # If no candidates are caught up enough, then go to the primary.
@@ -150,10 +145,9 @@ end
 # determinations as to whether it's safe for them to read from replicas. Note
 # that this is an update operation and always executes against the primary.
 def update_user_min_lsn(user)
-  # Note that this becomes `pg_current_wal_lsn()` in PG 10. Needs update.
   User.
     where(id: user.id).
-    update(Sequel.lit("min_lsn = pg_current_xlog_location()"))
+    update(Sequel.lit("min_lsn = pg_current_wal_lsn()"))
 end
 
 def validate_params(request)

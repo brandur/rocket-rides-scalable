@@ -14,13 +14,8 @@ class Observer
 
     last_lsns = replica_names.map do |name|
       DB.with_server(name) do
-        # Note in PG 10 these changes come into effect and this code will need an
-        # update:
-        #
-        #     pg_last_xlog_replay_location -> pg_last_wal_replay_lsn
-        #
         DB[Sequel.lit(<<~eos)].first[:lsn]
-          SELECT pg_last_xlog_replay_location() AS lsn;
+          SELECT pg_last_wal_replay_lsn() AS lsn;
         eos
       end
     end
