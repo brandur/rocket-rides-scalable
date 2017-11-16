@@ -48,7 +48,9 @@ enough) and a query will be routed to the primary (`default`).
 
 Requirements:
 
-1. Postgres (`brew install postgres`)
+1. Postgres (`brew install postgres`) -- **Note:** the names of some
+   WAL-related functions changed in Postgres 10, and therefore this program
+   requires Postgres 10 or above to run.
 2. Ruby (`brew install ruby`)
 3. forego (`brew install forego`)
 
