@@ -64,6 +64,13 @@ File.open("#{DATA_DIR}/primary/postgresql.conf", mode="a") do |f|
     max_wal_senders=99 # must be less than max_connections
     port=#{POSTGRES_PORT}
     wal_level=hot_standby
+
+    # The primary could remove WAL between a base backup and when a replica
+    # comes online so that the replica is stuck never able to catch up. This
+    # removes any possibility of raciness by keeping a couple 16 MB segments
+    # around. There's so little activity on this toy database that in practice
+    # this will be more than enough.
+    wal_keep_segments=2
   eos
 end
 
@@ -77,11 +84,9 @@ primary_pid = Process.spawn("postgres -D #{DATA_DIR}/primary/")
 print_status("Waiting a short moment for it to come up")
 sleep(1)
 
-# Now bring up the replicas. Note that we do all the work (backup, configure,
-# start) for each replica all at once because if the initial base backup and
-# startup are too far apart there's a possibility of a race condition as a
-# replica comes up, but the WAL segment it's trying to start from has already
-# been removed by the primary.
+#
+# bring up replicas
+#
 
 replica_pids = []
 
