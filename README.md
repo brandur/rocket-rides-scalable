@@ -1,4 +1,4 @@
-# rocket-rides-reads [![Build Status](https://travis-ci.org/brandur/rocket-rides-reads.svg?branch=master)](https://travis-ci.org/brandur/rocket-rides-reads)
+# rocket-rides-scalable [![Build Status](https://travis-ci.org/brandur/rocket-rides-scalable.svg?branch=master)](https://travis-ci.org/brandur/rocket-rides-scalable)
 
 This is a project based on the original [Rocket Rides][rides] repository to
 demonstrate what it might look like to implement reads from a replica that are
@@ -74,8 +74,8 @@ processes:
 
 ```
 bundle install
-createdb -p 5433 rocket-rides-reads
-psql -p 5433 rocket-rides-reads < schema.sql
+createdb -p 5433 rocket-rides-scalable
+psql -p 5433 rocket-rides-scalable < schema.sql
 forego start
 ```
 
@@ -85,8 +85,8 @@ Install dependencies, create a test database and schema, and then run the test
 suite:
 
 ```
-createdb -p 5433 rocket-rides-reads-test
-psql -p 5433 rocket-rides-reads-test < schema.sql
+createdb -p 5433 rocket-rides-scalable-test
+psql -p 5433 rocket-rides-scalable-test < schema.sql
 forego run bundle exec rspec spec/
 ```
 

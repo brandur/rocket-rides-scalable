@@ -5,7 +5,7 @@ require "sequel"
 NUM_REPLICAS  = Integer(ENV["NUM_REPLICAS"]  || abort("need NUM_REPLICAS"))
 POSTGRES_PORT = Integer(ENV["POSTGRES_PORT"] || abort("need POSTGRES_PORT"))
 
-DB = Sequel.connect("postgres://localhost:#{POSTGRES_PORT}/rocket-rides-reads",
+DB = Sequel.connect("postgres://localhost:#{POSTGRES_PORT}/rocket-rides-scalable",
   servers: Hash[NUM_REPLICAS.times.map { |i|
     [:"replica#{i}", { port: POSTGRES_PORT + 1 + i }]
   }]
